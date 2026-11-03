@@ -14,6 +14,10 @@ import sys
 import tempfile
 from pathlib import Path
 
+# Every check here reads the English the tools print. A machine set to another
+# language would otherwise translate what is being checked and fail all of it.
+os.environ['HFAC_LANG'] = 'en'
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import audio
 import detect
@@ -2293,10 +2297,9 @@ def what_the_guide_holds():
           Path('docs/RELEASING.md').exists() and 'docs_dir: docs' not in config)
 
     uneven = guidecheck.parity(guide)
-    check('every page exists in English and in Turkish', not uneven, uneven)
+    check('every page exists in English, Turkish and Portuguese', not uneven, uneven)
 
-    english = sorted(p.stem for p in guide.glob('*.md')
-                     if not p.stem.endswith('.tr'))
+    english = sorted(p.stem for p in guide.glob('*.md') if '.' not in p.stem)
     check('and there is a page for each step of the process', english, english)
     for page in english:
         check(f'{page} is in the navigation', f'{page}.md' in config, page)
@@ -2342,9 +2345,9 @@ def what_the_guide_holds():
     check('headings keep their non-ASCII letters',
           'pymdownx.slugs.slugify' in config)
 
-    # both languages are searchable, in their own language
-    check('search is set up for both languages',
-          re.search(r'search:\s*\n\s*lang:\s*\n\s*- en\s*\n\s*- tr', config))
+    # every language is searchable, in its own language
+    check('search is set up for every language',
+          re.search(r'search:\s*\n\s*lang:\s*\n\s*- en\s*\n\s*- tr\s*\n\s*- pt', config))
 
     # pinned, because a theme that moves under the site silently is the same
     # failure as a table that moves under a config
@@ -2609,8 +2612,10 @@ def the_stick_it_writes_to():
         check('  and it says why in those words', says in why, why)
         check('  ready means it names where to write',
               bool(where) is ready, where)
+    # the sentence is a format string now, so a translation can put the word
+    # where its own grammar wants it; the word filled in is still the device
     check('a pane that asks for a word says which word',
-          'Type {stick.Device} below' in
+          'boots from. Type {0} below to turn the button on.", stick.Device)' in
           Path('gui/Views/StickView.axaml.cs').read_text())
 
     # naming a disk nobody was offered does not erase it. This is the check

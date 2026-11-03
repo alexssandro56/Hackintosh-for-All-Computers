@@ -15,8 +15,8 @@ public sealed class ToolItem
     public ToolItem(ToolRow row)
     {
         Path = row.Path;
-        Upstream = row.Upstream ?? "no upstream recorded";
-        Licence = row.Licence ?? "unread";
+        Upstream = row.Upstream ?? L.T("no upstream recorded");
+        Licence = row.Licence ?? L.T("unread");
         Note = row.Note ?? "";
         HasNote = Note.Length > 0;
     }
@@ -33,7 +33,7 @@ public sealed class SourceItem
     public SourceItem(SourceRow row)
     {
         Area = row.Area;
-        Kind = row.Kind;
+        Kind = L.T(row.Kind);
         Source = row.Source;
         Covers = $"{row.Count} · {row.Covers}";
         Gap = row.Gap;
@@ -60,7 +60,11 @@ public partial class AboutView : UserControl
 {
     Task? _loaded;
 
-    public AboutView() => InitializeComponent();
+    public AboutView()
+    {
+        InitializeComponent();
+        L.Apply(this);
+    }
 
     // One read, and everybody waits for the same one. A bool guard let the
     // second caller past while the first was still awaiting: the nav's own
@@ -85,23 +89,24 @@ public partial class AboutView : UserControl
 
         Counts.ItemsSource = new List<CountItem>
         {
-            new("OPENCORE", about.OpenCore ?? "unknown"),
-            new("CONFIGS", about.Configs.ToString()),
-            new("KEXTS", about.Kexts.ToString()),
-            new("SOURCES", about.Sources.Count.ToString()),
-            new("NETWORK", about.Network is null ? "never" : "when asked"),
+            new(L.T("OPENCORE"), about.OpenCore ?? L.T("unknown")),
+            new(L.T("CONFIGS"), about.Configs.ToString()),
+            new(L.T("KEXTS"), about.Kexts.ToString()),
+            new(L.T("SOURCES"), about.Sources.Count.ToString()),
+            new(L.T("NETWORK"), L.T(about.Network is null ? "never" : "when asked")),
         };
 
         // counted, not asserted. It used to say "both ACPI tools" while nine
         // programs travelled in the package.
-        Offline.Text = "Nothing here reaches the network while it runs. The machine "
+        Offline.Text = L.F("Nothing here reaches the network while it runs. The machine "
                      + "an EFI is prepared on is usually the machine about to be "
-                     + $"replaced, and it is often not online - so {about.Kexts} kexts, "
-                     + $"{about.Configs} configs and {about.Tools.Count} whole programs "
+                     + "replaced, and it is often not online - so {0} kexts, "
+                     + "{1} configs and {2} whole programs "
                      + "travel inside it. The tables below were fetched once, by the "
-                     + "tool named beside each, and committed."
+                     + "tool named beside each, and committed.",
+                       about.Kexts, about.Configs, about.Tools.Count)
                      + (about.Network is { } once
-                        ? $" The one thing that does open a connection is {once}."
+                        ? L.F(" The one thing that does open a connection is {0}.", once)
                         : "");
         Licence.Text = (about.Licence is { } licence ? licence + ". " : "")
                      + (about.Repo ?? "");
@@ -110,12 +115,12 @@ public partial class AboutView : UserControl
         // the order is the order of how much a claim is worth
         var order = new[] { "derived", "measured", "quoted", "reported", "none" };
         var said = order.Where(k => about.Tally.ContainsKey(k))
-                        .Select(k => $"{about.Tally[k]} {k}");
-        Tally.Text = $"{string.Join(", ", said)}. Derived means it was read out of the "
+                        .Select(k => $"{about.Tally[k]} {L.T(k)}");
+        Tally.Text = $"{string.Join(", ", said)}. " + L.T("Derived means it was read out of the "
                    + "thing itself - a kext's own matching rules, the profile tree. "
                    + "Quoted means a sentence from a document. Reported means somebody "
                    + "ran it and said what happened. None means this repository has no "
-                   + "source for it and says so rather than guessing.";
+                   + "source for it and says so rather than guessing.");
         // weakest first. A page whose subject is where the answers come from
         // should open on the ones that came from nowhere, not bury them at
         // twenty-two of twenty-six.

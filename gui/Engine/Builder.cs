@@ -50,7 +50,7 @@ public static class Builder
             // engine was found inside the bundle and reported as beside it
             var full = Path.GetFullPath(packaged);
             var where = full.Contains(Path.Combine("Contents", "Resources"))
-                ? "inside this app" : "beside this window";
+                ? L.T("inside this app") : L.T("beside this window");
             return new Located(full, Array.Empty<string>(), where);
         }
 
@@ -63,17 +63,17 @@ public static class Builder
             var python = Interpreter();
             if (python is null)
             {
-                complaint = "Found the engine at " + script + " but no Python that " +
-                            "can run it. It needs 3.11 or newer, for tomllib.";
+                complaint = L.F("Found the engine at {0} but no Python that " +
+                            "can run it. It needs 3.11 or newer, for tomllib.", script);
                 return null;
             }
             complaint = "";
-            return new Located(python, new[] { script }, "a clone at " + dir.FullName);
+            return new Located(python, new[] { script }, L.T("a clone at ") + dir.FullName);
         }
 
-        complaint = $"No engine found. Looked for {ExeName} beside this window, " +
-                    $"inside this app's Resources, and for tools/setup.py above " +
-                    $"{beside}.";
+        complaint = L.F("No engine found. Looked for {0} beside this window, " +
+                    "inside this app's Resources, and for tools/setup.py above " +
+                    "{1}.", ExeName, beside);
         return null;
     }
 
@@ -215,8 +215,8 @@ public static class Builder
         if (finished != exited)
         {
             try { process.Kill(entireProcessTree: true); } catch (Exception) { }
-            return ("", $"{Path.GetFileName(engine.Program)} did not answer within "
-                      + "three minutes, so it was stopped.", 1);
+            return ("", L.F("{0} did not answer within "
+                      + "three minutes, so it was stopped.", Path.GetFileName(engine.Program)), 1);
         }
         return (await stdout, await stderr, process.ExitCode);
     }
@@ -275,8 +275,8 @@ public static class Builder
         if (await Task.WhenAny(exited, Task.Delay(bound)) != exited)
         {
             try { process.Kill(entireProcessTree: true); } catch (Exception) { }
-            return ($"{Path.GetFileName(engine.Program)} was still going after "
-                  + $"{bound.TotalMinutes:0} minutes, so it was stopped.", 1);
+            return (L.F("{0} was still going after "
+                  + "{1:0} minutes, so it was stopped.", Path.GetFileName(engine.Program), bound.TotalMinutes), 1);
         }
         return (said.ToString().Trim(), process.ExitCode);
     }
@@ -291,15 +291,15 @@ public static class Builder
         var (output, error, code) = await Run(engine, arguments);
         if (code != 0)
             return (null, error.Trim() is { Length: > 0 } said ? said
-                                                              : $"the engine exited {code}");
+                                                              : L.F("the engine exited {0}", code));
         try
         {
             var doc = JsonSerializer.Deserialize(output, Payload.Default.MachineDocument);
-            return doc is null ? (null, "the engine wrote nothing") : (doc, "");
+            return doc is null ? (null, L.T("the engine wrote nothing")) : (doc, "");
         }
         catch (JsonException e)
         {
-            return (null, "could not read what the engine wrote: " + e.Message);
+            return (null, L.T("could not read what the engine wrote: ") + e.Message);
         }
     }
 }

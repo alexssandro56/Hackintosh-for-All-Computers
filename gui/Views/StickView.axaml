@@ -55,14 +55,14 @@
 
           <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
             <TextBlock Grid.Column="0" Classes="eyebrow" Text="EFI"
-                       VerticalAlignment="Center" Width="70" />
+                       VerticalAlignment="Center" Width="84" />
             <TextBlock Grid.Column="1" Name="EfiFrom" Classes="mono"
                        VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
             <Button Grid.Column="2" Name="PickEfi" Content="Change…" />
           </Grid>
           <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
             <TextBlock Grid.Column="0" Classes="eyebrow" Text="INSTALLER"
-                       VerticalAlignment="Center" Width="70" />
+                       VerticalAlignment="Center" Width="84" />
             <TextBlock Grid.Column="1" Name="RecoveryFrom" Classes="mono"
                        VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
             <Button Grid.Column="2" Name="PickRecovery" Content="Change…" />

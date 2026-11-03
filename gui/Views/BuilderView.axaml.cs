@@ -124,6 +124,7 @@ public partial class BuilderView : UserControl
     public BuilderView()
     {
         InitializeComponent();
+        L.Apply(this);
         OutFolder.Text = _out;
         Begin.Click += async (_, _) => await Run();
         Choose.Click += async (_, _) => await Pick();
@@ -141,14 +142,14 @@ public partial class BuilderView : UserControl
         var top = TopLevel.GetTopLevel(this);
         if (top is null) return;
         var picked = await top.StorageProvider.OpenFolderPickerAsync(
-            new FolderPickerOpenOptions { Title = "Where should the EFI go?", AllowMultiple = false });
+            new FolderPickerOpenOptions { Title = L.T("Where should the EFI go?"), AllowMultiple = false });
         if (picked.Count == 0) return;
         var path = picked[0].TryGetLocalPath();
         if (path is null)
         {
             // a folder the picker can name but the filesystem cannot - a phone,
             // a network location the engine has no path for
-            Say(new[] { new TextSpan("warn", "That folder has no path this can write to.") });
+            Say(new[] { new TextSpan("warn", L.T("That folder has no path this can write to.")) });
             return;
         }
         _out = Path.Combine(path, "EFI");
@@ -161,7 +162,7 @@ public partial class BuilderView : UserControl
         if (engine is null)
         {
             Standby.IsVisible = true;
-            StandbyTitle.Text = "No engine";
+            StandbyTitle.Text = L.T("No engine");
             StandbyText.Text = missing;
             return;
         }
@@ -182,7 +183,7 @@ public partial class BuilderView : UserControl
         }
         catch (IOException e)
         {
-            Say(new[] { new TextSpan("bad", "the engine stopped talking: " + e.Message) });
+            Say(new[] { new TextSpan("bad", L.T("the engine stopped talking: ") + e.Message) });
             Done(1, null);
         }
     }
@@ -197,8 +198,8 @@ public partial class BuilderView : UserControl
         StickToEnd();
         Standby.IsVisible = true;
         Begin.IsEnabled = true;
-        StandbyTitle.Text = "Stopped";
-        StandbyText.Text = "Nothing was written. Starting again asks from the top.";
+        StandbyTitle.Text = L.T("Stopped");
+        StandbyText.Text = L.T("Nothing was written. Starting again asks from the top.");
     }
 
     // ---- what it said ----------------------------------------------------
@@ -276,7 +277,7 @@ public partial class BuilderView : UserControl
                         Children =
                         {
                             new TextBlock { Text = option.Label, VerticalAlignment = VerticalAlignment.Center },
-                            Pill("detected"),
+                            Pill(L.T("detected")),
                         },
                     }
                     : option.Label,
@@ -310,7 +311,7 @@ public partial class BuilderView : UserControl
                 .FirstOrDefault(r => r.IsChecked == true);
             if (chosen is null)
             {
-                Hint.Text = "Pick one of these first.";
+                Hint.Text = L.T("Pick one of these first.");
                 Hint.IsVisible = true;
                 return;
             }
@@ -334,24 +335,24 @@ public partial class BuilderView : UserControl
         StickToEnd();
         Standby.IsVisible = true;
         Begin.IsEnabled = true;
-        Begin.Content = "Build again";
+        Begin.Content = L.T("Build again");
         _built = built;
         Open.IsVisible = code == 0 && built is not null;
         if (code == 0 && built is not null)
         {
-            StandbyTitle.Text = "Written";
-            StandbyText.Text = $"The EFI folder is at {built}. Copy it to the EFI " +
-                               "partition of your USB drive.";
+            StandbyTitle.Text = L.T("Written");
+            StandbyText.Text = L.F("The EFI folder is at {0}. Copy it to the EFI " +
+                                   "partition of your USB drive.", built);
         }
         else if (code == 0)
         {
-            StandbyTitle.Text = "Finished";
-            StandbyText.Text = "It ended without writing an EFI. The transcript says why.";
+            StandbyTitle.Text = L.T("Finished");
+            StandbyText.Text = L.T("It ended without writing an EFI. The transcript says why.");
         }
         else
         {
-            StandbyTitle.Text = "Stopped with an error";
-            StandbyText.Text = $"The engine exited {code}. The transcript says why.";
+            StandbyTitle.Text = L.T("Stopped with an error");
+            StandbyText.Text = L.F("The engine exited {0}. The transcript says why.", code);
         }
         _ended?.TrySetResult($"rc={code} {StandbyTitle.Text}: {built ?? "nothing written"}");
     }

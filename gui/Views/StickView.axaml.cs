@@ -32,6 +32,7 @@ public partial class StickView : UserControl
     public StickView()
     {
         InitializeComponent();
+        L.Apply(this);
         EfiFrom.Text = _efi;
         RecoveryFrom.Text = _recovery;
         Again.Click += async (_, _) => { _loaded = null; await Load(); };
@@ -49,7 +50,7 @@ public partial class StickView : UserControl
             Erase.IsEnabled = _erasable && want.Length > 0 && typed == want;
             // and say what is wrong, rather than leaving a grey button
             TypedHint.Text = typed.Length == 0 || Erase.IsEnabled ? ""
-                           : $"that is not {want}";
+                           : L.F("that is not {0}", want);
         };
         Open.Click += (_, _) =>
         {
@@ -71,7 +72,7 @@ public partial class StickView : UserControl
         // Windows takes its time over this: a PowerShell start, Get-Disk, and
         // a Get-Volume for every partition. An empty box with nothing under it
         // for ten seconds reads as "no stick", which is how it was read.
-        Found.Text = "Looking…";
+        Found.Text = L.T("Looking…");
         Again.IsEnabled = false;
         var (list, complaint) = await Inventory.Sticks(engine);
         Again.IsEnabled = true;
@@ -90,14 +91,14 @@ public partial class StickView : UserControl
         Which.SelectedIndex = list.Sticks.Count == 0 ? -1 : ready >= 0 ? ready : 0;
         Found.Text = (list.Asked, list.Sticks.Count) switch
         {
-            (false, _) => $"Nothing here could ask: {list.Trouble}. That is not "
-                        + "the same as no stick being plugged in.",
-            (_, 0) => "No removable disk is plugged in. This only ever lists "
+            (false, _) => L.F("Nothing here could ask: {0}. That is not "
+                        + "the same as no stick being plugged in.", list.Trouble),
+            (_, 0) => L.F("No removable disk is plugged in. This only ever lists "
                + "removable, external, physical disks, and never the one this "
-               + $"computer booted from{(list.Booted is { } b ? $" ({b})" : "")}.",
-            (_, 1) => "One, and it is not the disk this computer booted from.",
-            (_, var n) => $"{n} of them. The disk this computer booted from is not "
-                   + "among them and cannot be.",
+               + "computer booted from{0}.", list.Booted is { } b ? $" ({b})" : ""),
+            (_, 1) => L.T("One, and it is not the disk this computer booted from."),
+            (_, var n) => L.F("{0} of them. The disk this computer booted from is not "
+                   + "among them and cannot be.", n),
         };
         Describe();
     }
@@ -168,8 +169,8 @@ public partial class StickView : UserControl
         VerdictBox.Classes.Set("ok", stick.Ready);
         VerdictBox.Classes.Set("warn", !stick.Ready);
         VerdictWhat.Text = stick.Ready
-            ? $"Ready. Writes to {stick.WriteTo}"
-            : "This one has to be formatted first";
+            ? L.F("Ready. Writes to {0}", stick.WriteTo)
+            : L.T("This one has to be formatted first");
         VerdictWhy.Text = stick.Why;
 
         Copy.IsEnabled = stick.Ready;
@@ -178,20 +179,19 @@ public partial class StickView : UserControl
         EraseBox.IsExpanded = !stick.Ready;
         EraseBox.IsVisible = true;
         Open.IsVisible = stick.Where.Length > 0;
-        EraseWhat.Text = $"This erases everything on {stick.Name}, {stick.Size} "
-                       + $"({stick.Device})"
-                       + (stick.Where.Length > 0 ? $", mounted at {stick.Where}." : ".")
-                       + " There is no undoing it.";
+        EraseWhat.Text = L.F("This erases everything on {0}, {1} ({2})", stick.Name, stick.Size, stick.Device)
+                       + (stick.Where.Length > 0 ? L.F(", mounted at {0}.", stick.Where) : ".")
+                       + L.T(" There is no undoing it.");
         // the word to type, spelled out. "the disk name" was read as the
         // volume's name - USB, RUFUS_BOOT - and the button stayed grey with
         // nothing saying why
         EraseHow.Text = _erasable
-            ? $"It becomes one FAT32 partition under GPT, which is what OpenCore "
-            + $"boots from. Type {stick.Device} below to turn the button on."
-            : "This system cannot do it from here - it needs a root or "
+            ? L.F("It becomes one FAT32 partition under GPT, which is what OpenCore "
+            + "boots from. Type {0} below to turn the button on.", stick.Device)
+            : L.T("This system cannot do it from here - it needs a root or "
             + "administrator the engine does not have. Press it anyway and the "
-            + "exact commands to run yourself are printed below.";
-        Typed.Watermark = $"type {stick.Device}";
+            + "exact commands to run yourself are printed below.");
+        Typed.Watermark = L.F("type {0}", stick.Device);
         EraseAsk.IsVisible = true;
         Erase.IsEnabled = false;
         Typed.Text = "";
@@ -205,8 +205,8 @@ public partial class StickView : UserControl
         if (top is null) return;
         var picked = await top.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
         {
-            Title = efi ? "Which EFI folder?"
-                        : $"Which folder holds {_folder}?",
+            Title = efi ? L.T("Which EFI folder?")
+                        : L.F("Which folder holds {0}?", _folder),
             AllowMultiple = false,
         });
         var path = picked.FirstOrDefault()?.TryGetLocalPath();
@@ -221,15 +221,15 @@ public partial class StickView : UserControl
         if (stick.Where.Length == 0)
         {
             Show("That stick is not mounted",
-                 $"{stick.Device} has no mounted volume, so there is nowhere to "
-                 + "copy to. Format it first, or mount it.", null);
+                 L.F("{0} has no mounted volume, so there is nowhere to "
+                 + "copy to. Format it first, or mount it.", stick.Device), null);
             return;
         }
         var engine = Builder.Find(out var missing);
         if (engine is null) { Show("No engine", missing, null); return; }
 
         Copy.IsEnabled = false;
-        Show($"Copying onto {stick.Name}…", "", null);
+        Show(L.F("Copying onto {0}…", stick.Name), "", null);
         var said = new List<string>();
         var (complaint, code) = await Builder.Stream(engine, line =>
         {
@@ -246,8 +246,8 @@ public partial class StickView : UserControl
                  complaint is { Length: > 0 } ? complaint : string.Join("\n", said), null);
             return;
         }
-        Show($"{stick.Name} is ready", string.Join("\n", said),
-             $"Boot the machine from it. OpenCore's picker lists macOS Base System "
+        Show(L.F("{0} is ready", stick.Name), string.Join("\n", said),
+             "Boot the machine from it. OpenCore's picker lists macOS Base System "
              + "if the installer is on there; the rest of macOS comes down during "
              + "the install, so that machine needs Ethernet or a card macOS drives.");
     }
@@ -259,7 +259,7 @@ public partial class StickView : UserControl
         if (engine is null) { Show("No engine", missing, null); return; }
 
         Erase.IsEnabled = false;
-        Show($"Erasing {stick.Name}…", "", null);
+        Show(L.F("Erasing {0}…", stick.Name), "", null);
         var said = new List<string>();
         var (complaint, code) = await Builder.Stream(engine, line =>
         {
@@ -276,7 +276,7 @@ public partial class StickView : UserControl
             Typed.Text = "";
             return;
         }
-        Show($"{stick.Name} is formatted", string.Join("\n", said),
+        Show(L.F("{0} is formatted", stick.Name), string.Join("\n", said),
              "Now copy the EFI and the installer onto it.");
         Typed.Text = "";
         _loaded = null;
@@ -286,9 +286,9 @@ public partial class StickView : UserControl
     void Show(string title, string body, string? next)
     {
         Result.IsVisible = true;
-        ResultTitle.Text = title;
-        ResultText.Text = body;
-        ResultNext.Text = next ?? "";
+        ResultTitle.Text = L.T(title);
+        ResultText.Text = L.T(body);
+        ResultNext.Text = next is null ? "" : L.T(next);
         ResultNext.IsVisible = next is not null;
     }
 }

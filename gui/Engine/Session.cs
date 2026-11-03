@@ -165,14 +165,14 @@ public sealed class Session
         // the skip row is a row like any other once it is drawn
         if (root.TryGetProperty("skip", out var skip))
             options.Add(new Option(skip.GetProperty("n").GetInt32(),
-                                   Text(skip, "label") ?? "none of these", false,
+                                   Text(skip, "label") ?? L.T("none of these"), false,
                                    "no"));
         var step = root.TryGetProperty("step", out var s) && s.ValueKind == JsonValueKind.Number
             ? s.GetInt32() : (int?)null;
         var total = root.TryGetProperty("total", out var t) && t.ValueKind == JsonValueKind.Number
             ? t.GetInt32() : (int?)null;
         var note = step is null ? null
-            : total is null ? $"question {step}" : $"question {step} of {total}";
+            : total is null ? L.F("question {0}", step) : L.F("question {0} of {1}", step, total);
         return new Question(root.GetProperty("id").GetInt32(),
                             Text(root, "question") ?? "", options, note, false);
     }

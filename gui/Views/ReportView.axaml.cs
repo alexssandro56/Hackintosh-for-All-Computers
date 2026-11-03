@@ -18,6 +18,7 @@ public partial class ReportView : UserControl
     public ReportView()
     {
         InitializeComponent();
+        L.Apply(this);
         Where.Text = _to;
         Choose.Click += async (_, _) => await Pick();
         Take.Click += async (_, _) => await Take_();
@@ -39,7 +40,7 @@ public partial class ReportView : UserControl
         if (top is null) return;
         var picked = await top.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
-            Title = "Where should the report go?",
+            Title = L.T("Where should the report go?"),
             SuggestedFileName = "machine.json",
             DefaultExtension = "json",
         });
@@ -70,17 +71,17 @@ public partial class ReportView : UserControl
         // the engine prints what it read and where the tables went; that is the
         // useful part and it is already written for a person
         Show("Written", output.Trim(),
-             $"Copy {Path.GetFileName(_to)} to the machine you build on, open the " +
-             "Builder there, and answer “Another machine, and I have its " +
-             "hardware report”.");
+             L.F("Copy {0} to the machine you build on, open the " +
+             "Builder there, and answer “{1}”.", Path.GetFileName(_to),
+                 L.T("Another machine, and I have its hardware report")));
     }
 
     void Show(string title, string body, string? next)
     {
         Result.IsVisible = true;
-        ResultTitle.Text = title;
-        ResultText.Text = body;
-        ResultNext.Text = next ?? "";
+        ResultTitle.Text = L.T(title);
+        ResultText.Text = L.T(body);
+        ResultNext.Text = next is null ? "" : L.T(next);
         ResultNext.IsVisible = next is not null;
     }
 }

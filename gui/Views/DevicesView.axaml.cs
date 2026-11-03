@@ -16,7 +16,7 @@ public sealed class DeviceItem
 {
     public DeviceItem(DeviceRow row)
     {
-        Category = row.Category;
+        Category = L.T(row.Category);
         Name = row.Name;
         Vendor = Short(row.Vendor ?? "");
         Id = row.Id ?? "";
@@ -24,7 +24,7 @@ public sealed class DeviceItem
         HasKext = Kext.Length > 0;
         Note = row.Note;
         HasNote = Note.Length > 0;
-        Status = row.Status;
+        Status = L.T(row.Status);
         IsOk = row.Status == "supported";
         IsBad = row.Status == "unsupported";
         IsUnclear = row.Status is "untested" or "spoofed" or "dropped";
@@ -82,7 +82,7 @@ public sealed class DeviceItem
 
 public partial class DevicesView : UserControl
 {
-    const string Everything = "All";
+    static readonly string Everything = L.T("All");
     List<DeviceItem> _all = new();
     Task? _loaded;
     // which column orders the list, and which way. One at a time: two keys
@@ -93,6 +93,7 @@ public partial class DevicesView : UserControl
     public DevicesView()
     {
         InitializeComponent();
+        L.Apply(this);
         Search.TextChanged += (_, _) => Draw();
         Category.SelectionChanged += (_, _) => Draw();
         Vendor.SelectionChanged += (_, _) => Draw();
@@ -131,15 +132,15 @@ public partial class DevicesView : UserControl
         if (list is null) { Blurb.Text = complaint; return; }
 
         _all = list.Devices.Select(d => new DeviceItem(d)).ToList();
-        Blurb.Text = $"{_all.Count} devices across {list.Categories.Count} categories, "
+        Blurb.Text = L.F("{0} devices across {1} categories, "
                    + "read out of the same tables a build reads. A device being here "
                    + "means something in this repository claims it - not that every "
-                   + "machine it sits in will work.";
-        Category.ItemsSource = new[] { Everything }.Concat(list.Categories).ToList();
+                   + "machine it sits in will work.", _all.Count, list.Categories.Count);
+        Category.ItemsSource = new[] { Everything }.Concat(list.Categories.Select(L.T)).ToList();
         Vendor.ItemsSource = new[] { Everything }
             .Concat(list.Vendors.Select(DeviceItem.ShortName).Distinct().OrderBy(v => v))
             .ToList();
-        Status.ItemsSource = new[] { Everything }.Concat(list.Statuses).ToList();
+        Status.ItemsSource = new[] { Everything }.Concat(list.Statuses.Select(L.T)).ToList();
         Category.SelectedIndex = 0;
         Vendor.SelectedIndex = 0;
         Status.SelectedIndex = 0;
@@ -171,12 +172,12 @@ public partial class DevicesView : UserControl
 
         // the arrow goes on the column doing the ordering, and only that one
         var arrow = _ascending ? "  \u2191" : "  \u2193";
-        SortCategoryLabel.Text = "CATEGORY" + (_sortBy == "category" ? arrow : "");
-        SortNameLabel.Text = "DEVICE" + (_sortBy == "name" ? arrow : "");
+        SortCategoryLabel.Text = L.T("CATEGORY") + (_sortBy == "category" ? arrow : "");
+        SortNameLabel.Text = L.T("DEVICE") + (_sortBy == "name" ? arrow : "");
 
         Rows.ItemsSource = shown;
         Count.Text = shown.Count == _all.Count
-            ? $"{shown.Count} devices"
-            : $"{shown.Count} of {_all.Count} devices";
+            ? L.F("{0} devices", shown.Count)
+            : L.F("{0} of {1} devices", shown.Count, _all.Count);
     }
 }

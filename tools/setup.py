@@ -28,6 +28,7 @@ import audio
 import build
 import detect
 import gpu
+import i18n
 import igpu
 import inputdev
 import netkexts
@@ -102,6 +103,7 @@ def _answer(**event):
 
 def prompt(question, note=None):
     """A free-text answer. Empty means the person declined."""
+    question, note = i18n.tr(question), i18n.tr(note)
     if not UI.protocol:
         print(f'\n{BOLD}{question}{RESET}')
         if note:
@@ -116,6 +118,10 @@ def ask(step, total, question, options, detected=None, allow_skip=False,
     `detected` is shown as a note and marks its row, but the person still types
     a number - the whole point is that the machine's guess is visible and
     overridable in the same glance."""
+    # translated here and not where they are printed: the protocol sends them
+    # as fields of an event, and only printed lines pass the translating writer
+    question, skip_label = i18n.tr(question), i18n.tr(skip_label)
+    options = [(value, i18n.tr_line(label)) for value, label in options]
     # A front end is sent the menu as an event and draws it itself, so printing
     # it as well would show it twice - once as a list of rows it can click and
     # once as the transcript of a program it is pretending not to be.
@@ -129,11 +135,11 @@ def ask(step, total, question, options, detected=None, allow_skip=False,
             print(f'\n{BOLD}[{counter}] {question}{RESET}')
         hint = dict(options).get(detected)
         if hint:
-            print(f'      {GREEN}detected: {hint}{RESET}')
+            print(f'      {GREEN}' + i18n.fmt('detected: {}', hint) + RESET)
         elif detected:
-            print(f'      {GREEN}detected: {detected}{RESET}')
+            print(f'      {GREEN}' + i18n.fmt('detected: {}', detected) + RESET)
         for i, (value, label) in enumerate(options, 1):
-            mark = f' {GREEN}<- detected{RESET}' if value == detected else ''
+            mark = f' {GREEN}{i18n.tr("<- detected")}{RESET}' if value == detected else ''
             print(f'      {i:2d}) {label}{mark}')
         if allow_skip:
             print(f'      {len(options) + 1:2d}) {skip_label}')
@@ -595,10 +601,24 @@ def main():
     if a.check_tools:
         return check_tools()
 
+    def speaking():
+        # Only what is printed for a person is translated. The JSON documents
+        # below are written whole and translated field by field, because a line
+        # of JSON passed through the writer could meet a template that matches it.
+        if not UI.protocol and i18n.lang() != 'en':
+            sys.stdout = i18n.Writer(sys.stdout)
+
     if a.usb_list:
         import json as _json
-        sys.stdout.write(_json.dumps(stick.document(), ensure_ascii=False) + '\n')
+        sys.stdout.write(_json.dumps(i18n.document(stick.document()),
+                                     ensure_ascii=False) + '\n')
         return 0
+
+    # not the script: it is run as it is printed, and a person approves it
+    # with their password reading exactly that text
+    if (a.usb_place or a.usb_prepare or a.recovery
+            or (a.make_installer and not a.installer_script)):
+        speaking()
 
     if a.usb_place:
         # the same tool the console drives, so a window and a terminal put the
@@ -649,7 +669,7 @@ def main():
         import json as _json
         got, complaint = recovery.newest()
         sys.stdout.write(_json.dumps(
-            {'t': 'newest', 'newest': got, 'complaint': complaint or ''},
+            {'t': 'newest', 'newest': got, 'complaint': i18n.tr(complaint or '')},
             ensure_ascii=False) + '\n')
         return 0 if got else 1
 
@@ -663,7 +683,8 @@ def main():
             document = inventory.recoveries(carried)
         else:
             document = inventory.DOCUMENTS[a.inventory]()
-        sys.stdout.write(_json.dumps(document, ensure_ascii=False) + '\n')
+        sys.stdout.write(_json.dumps(i18n.document(document),
+                                     ensure_ascii=False) + '\n')
         return 0
 
     if a.describe:
@@ -679,9 +700,11 @@ def main():
             where = f'report {Path(a.machine).name}'
         else:
             described, where = overrides(a, detect.probe()), 'this machine'
-        sys.stdout.write(_json.dumps(summary.document(described, where),
+        sys.stdout.write(_json.dumps(i18n.document(summary.document(described, where)),
                                      ensure_ascii=False) + '\n')
         return 0
+
+    speaking()
 
     if a.report:
         a.report = str(Path(a.report).expanduser().resolve())
@@ -807,10 +830,10 @@ def main():
     ready = profile_from(hw)
     if ready:
         r_plat, r_vendor, r_cpu, r_cores, r_oem = ready
-        described = ', '.join(x for x in [
+        described = ', '.join(i18n.tr(x) for x in [
             r_plat.capitalize(),
             CPU_LABELS.get(r_cpu, r_cpu),
-            f'{r_cores} cores' if r_cores else None,
+            i18n.fmt('{} cores', r_cores) if r_cores else None,
             (r_oem.upper().replace('-', ' / ') if r_oem else 'no board overlay'),
         ] if x)
         if ask(nxt(), 0, 'Use what was detected, or answer for yourself?',

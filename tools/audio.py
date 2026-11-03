@@ -19,6 +19,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import i18n
 import ocgen
 
 TABLE = Path('data/audio.toml')
@@ -67,7 +68,8 @@ def report(hda_ids, brand=None):
         if chosen is None and ordered:
             chosen = ordered[0]['id']
         for layout in ordered[:3]:
-            mark = ' <- starting with this one' if layout['id'] == chosen else ''
+            mark = (' ' + i18n.tr('<- starting with this one')
+                    if layout['id'] == chosen else '')
             lines.append(f'      alcid={layout["id"]:<4d} {layout.get("note", "")[:58]}{mark}')
         if len(ordered) > 3:
             lines.append(f'      and {len(ordered) - 3} more, written to NEXT-STEPS.txt')

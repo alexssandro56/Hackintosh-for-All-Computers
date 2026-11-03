@@ -34,6 +34,7 @@ public partial class InstallerView : UserControl
     public InstallerView()
     {
         InitializeComponent();
+        L.Apply(this);
         Pick.Click += async (_, _) => await ChooseApp();
         Found.SelectionChanged += async (_, _) =>
         {
@@ -82,11 +83,11 @@ public partial class InstallerView : UserControl
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
             NotHere.IsVisible = true;
-            NotHereWhy.Text =
+            NotHereWhy.Text = L.T(
                 "Apple's createinstallmedia is the thing that writes an "
                 + "installer, it ships inside the installer app, and it runs "
                 + "on macOS only. Everything else in this program works here - "
-                + "build the EFI, fetch the recovery, write the stick.";
+                + "build the EFI, fetch the recovery, write the stick.");
             return Task.CompletedTask;
         }
         Work.IsVisible = true;
@@ -142,7 +143,7 @@ public partial class InstallerView : UserControl
         // the bundle is found here.
         var picked = await top.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
         {
-            Title = "Which folder is the installer in? Applications, say",
+            Title = L.T("Which folder is the installer in? Applications, say"),
             AllowMultiple = false,
         });
         var item = picked.FirstOrDefault();
@@ -152,8 +153,8 @@ public partial class InstallerView : UserControl
         if (where is null)
         {
             Trouble("That could not be read as a path",
-                    $"macOS handed back {item.Name} with no usable location. "
-                    + "Drag the app onto this pane, or type its path above.");
+                    L.F("macOS handed back {0} with no usable location. "
+                    + "Drag the app onto this pane, or type its path above.", item.Name));
             return;
         }
 
@@ -168,9 +169,9 @@ public partial class InstallerView : UserControl
         if (found.Count == 0)
         {
             Trouble("No installer app in there",
-                    $"{where} holds no Install macOS ….app. The app is usually "
+                    L.F("{0} holds no Install macOS ….app. The app is usually "
                     + "in /Applications, or wherever Mist or softwareupdate "
-                    + "left it. You can also drag it onto this pane.");
+                    + "left it. You can also drag it onto this pane.", where));
             return;
         }
         if (found.Count == 1)
@@ -194,8 +195,8 @@ public partial class InstallerView : UserControl
         Found.ItemsSource = found.Select(Path.GetFileName).ToList();
         Found.SelectedIndex = -1;
         Plan.IsVisible = true;
-        PlanTitle.Text = $"{found.Count} installers in that folder";
-        PlanText.Text = "Pick the one to build from.";
+        PlanTitle.Text = L.F("{0} installers in that folder", found.Count);
+        PlanText.Text = L.T("Pick the one to build from.");
         Build.IsEnabled = false;
     }
 
@@ -221,8 +222,8 @@ public partial class InstallerView : UserControl
     void Trouble(string title, string body)
     {
         Plan.IsVisible = true;
-        PlanTitle.Text = title;
-        PlanText.Text = body;
+        PlanTitle.Text = L.T(title);
+        PlanText.Text = L.T(body);
         Build.IsEnabled = false;
     }
 
@@ -250,9 +251,8 @@ public partial class InstallerView : UserControl
         Plan.IsVisible = true;
         PlanTitle.Text = $"{said.Name} {said.Version}".Trim();
         PlanText.Text =
-            $"the app is {Gib(said.App)}\n"
-          + $"createinstallmedia wants about {Gib(said.Overhead)} more\n"
-          + $"so the image will be {said.Gib} GiB";
+            L.F("the app is {0}\ncreateinstallmedia wants about {1} more\n"
+              + "so the image will be {2} GiB", Gib(said.App), Gib(said.Overhead), said.Gib);
         Ready();
     }
 
@@ -282,7 +282,7 @@ public partial class InstallerView : UserControl
         if (top is null) return;
         var picked = await top.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
         {
-            Title = "Which EFI folder?",
+            Title = L.T("Which EFI folder?"),
             AllowMultiple = false,
         });
         var path = picked.FirstOrDefault()?.TryGetLocalPath();
@@ -297,7 +297,7 @@ public partial class InstallerView : UserControl
         if (top is null) return;
         var picked = await top.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
-            Title = "Where should the image go?",
+            Title = L.T("Where should the image go?"),
             SuggestedFileName = "macos-installer.raw",
         });
         var path = picked?.TryGetLocalPath();
@@ -316,7 +316,7 @@ public partial class InstallerView : UserControl
         if (engine is null || _app is null)
         {
             Script.IsVisible = true;
-            Script.Text = _app is null ? "Choose an installer app first." : missing;
+            Script.Text = _app is null ? L.T("Choose an installer app first.") : missing;
             return;
         }
         var (text, complaint) = await Inventory.InstallerScript(engine, _app,
@@ -333,7 +333,7 @@ public partial class InstallerView : UserControl
         Build.IsEnabled = Pick.IsEnabled = PickEfi.IsEnabled = PickOut.IsEnabled = false;
         Result.IsVisible = true;
         Bar.IsVisible = true;
-        ResultTitle.Text = "Building the image…";
+        ResultTitle.Text = L.T("Building the image…");
         ResultNext.IsVisible = false;
 
         var said = new List<string>();
@@ -354,28 +354,28 @@ public partial class InstallerView : UserControl
 
         if (code != 0 || !File.Exists(_out))
         {
-            ResultTitle.Text = "The image was not built";
+            ResultTitle.Text = L.T("The image was not built");
             if (complaint is { Length: > 0 }) said.Add(complaint);
             ResultText.Text = string.Join("\n", said.TakeLast(10));
             return;
         }
 
         var size = new FileInfo(_out).Length;
-        ResultTitle.Text = $"{Path.GetFileName(_out)} is ready";
+        ResultTitle.Text = L.F("{0} is ready", Path.GetFileName(_out));
         ResultText.Text = $"{_out}\n{size / 1024.0 / 1024 / 1024:0.0} GiB";
         ResultNext.IsVisible = true;
-        ResultNext.Text =
+        ResultNext.Text = L.T(
             "It is a flat sector image, so balenaEtcher writes it to a stick "
           + "from Windows, Linux or macOS. The stick has to be at least as big "
           + "as the image - which is more gigabytes than the number here, "
-          + "because a stick is sold in decimal GB and this is GiB.";
+          + "because a stick is sold in decimal GB and this is GiB.");
     }
 
     void Say(string complaint)
     {
         Result.IsVisible = true;
         Bar.IsVisible = false;
-        ResultTitle.Text = "No engine";
+        ResultTitle.Text = L.T("No engine");
         ResultText.Text = complaint;
     }
 }

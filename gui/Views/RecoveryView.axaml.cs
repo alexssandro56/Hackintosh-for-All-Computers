@@ -36,9 +36,10 @@ public partial class RecoveryView : UserControl
     public RecoveryView()
     {
         InitializeComponent();
+        L.Apply(this);
         Where.Text = _to;
-        Target.Text = "The drive, not the EFI folder: OpenCore looks for "
-                    + $"{_folder} next to EFI, at the root of the partition.";
+        Target.Text = L.F("The drive, not the EFI folder: OpenCore looks for "
+                    + "{0} next to EFI, at the root of the partition.", _folder);
         // the row with no version has something to say about itself
         Which.SelectionChanged += (_, _) =>
         {
@@ -83,7 +84,7 @@ public partial class RecoveryView : UserControl
         if (list is null || !list.Available)
         {
             Provenance.Text = complaint is { Length: > 0 } said ? said
-                            : "no macrecovery is vendored, so there is nothing to drive";
+                            : L.T("no macrecovery is vendored, so there is nothing to drive");
             Fetch.IsEnabled = false;
             return;
         }
@@ -91,9 +92,9 @@ public partial class RecoveryView : UserControl
         Which.ItemsSource = list.Choices;
         Which.SelectedIndex = 0;
         SayNetwork(list);
-        Provenance.Text = $"{list.Choices.Count} of them, read from macrecovery's own "
+        Provenance.Text = L.F("{0} of them, read from macrecovery's own "
                         + "boards.json, which records the newest macOS Apple offers "
-                        + "each board. The board is what the request is made with.";
+                        + "each board. The board is what the request is made with.", list.Choices.Count);
     }
 
     /// <summary>Whether the machine being installed can finish this at all.
@@ -112,7 +113,7 @@ public partial class RecoveryView : UserControl
             "no"      => ("Recovery cannot finish on this machine", "bad"),
             _         => ("Not known for this machine", "warn"),
         };
-        NetworkState.Text = word;
+        NetworkState.Text = L.T(word);
         NetworkNote.Text = list.NetworkNote;
         Network.Classes.Set("ok", style == "ok");
         Network.Classes.Set("warn", style == "warn");
@@ -154,14 +155,14 @@ public partial class RecoveryView : UserControl
         if (engine is null) { Answered.Text = missing; return; }
 
         Ask.IsEnabled = false;
-        Answered.Text = "asking Apple…";
+        Answered.Text = L.T("asking Apple…");
         var (said, complaint) = await Inventory.Newest(engine);
         Ask.IsEnabled = true;
 
         if (said is null)
         {
             Answered.Text = complaint is { Length: > 0 } ? complaint
-                          : "Apple did not answer";
+                          : L.T("Apple did not answer");
             return;
         }
 
@@ -183,9 +184,9 @@ public partial class RecoveryView : UserControl
                 Which.SelectedIndex = at;
             }
         }
-        Answered.Text = $"Apple is serving {said.Name} {said.Version} today. "
+        Answered.Text = L.F("Apple is serving {0} {1} today. "
                       + "The row still asks for whatever is newest when you "
-                      + "press download, not for this number.";
+                      + "press download, not for this number.", said.Name, said.Version);
     }
 
     async Task Pick()
@@ -194,7 +195,7 @@ public partial class RecoveryView : UserControl
         if (top is null) return;
         var picked = await top.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
         {
-            Title = "Which drive? Pick the root of it, not the EFI folder.",
+            Title = L.T("Which drive? Pick the root of it, not the EFI folder."),
             AllowMultiple = false,
         });
         var path = picked.FirstOrDefault()?.TryGetLocalPath();
@@ -211,10 +212,10 @@ public partial class RecoveryView : UserControl
 
         Fetch.IsEnabled = Choose.IsEnabled = false;
         Open.IsVisible = false;
-        Show($"Fetching {choice.Titled} from Apple…", "", null);
+        Show(L.F("Fetching {0} from Apple…", choice.Titled), "", null);
         Moving.IsVisible = true;
         Bar.IsIndeterminate = true;      // until the first megabyte is counted
-        Done.Text = "connecting…";
+        Done.Text = L.T("connecting…");
         Rate.Text = "";
 
         var said = new List<string>();
@@ -256,7 +257,7 @@ public partial class RecoveryView : UserControl
                     var rate = (mb - firstMb) / span;
                     var left = rate > 0 ? TimeSpan.FromSeconds((whole - mb) / rate)
                                         : TimeSpan.Zero;
-                    Rate.Text = $"{rate:0.0} MB/s   {Left(left)} left";
+                    Rate.Text = $"{rate:0.0} MB/s   " + L.F("{0} left", Left(left));
                 }
                 return;                      // the bar says it; the log need not
             }
@@ -281,17 +282,17 @@ public partial class RecoveryView : UserControl
             return;
         }
         Open.IsVisible = true;
-        Show($"{choice.Titled} is on the stick",
+        Show(L.F("{0} is on the stick", choice.Titled),
              string.Join("\n", files.Select(f => $"{f.Name}  {f.Length / 1024.0 / 1024:0.0} MB")),
-             $"It sits in {_folder} at the root of {_to}. OpenCore lists it at the "
+             L.F("It sits in {0} at the root of {1}. OpenCore lists it at the "
              + "boot menu. The rest of macOS comes down during the install, so that "
-             + "machine needs Ethernet or a card macOS already drives.");
+             + "machine needs Ethernet or a card macOS already drives.", _folder, _to));
     }
 
     /// <summary>"4m 20s left", and never "0s left" for a whole minute.</summary>
     static string Left(TimeSpan span)
     {
-        if (span.TotalSeconds < 1) return "almost done";
+        if (span.TotalSeconds < 1) return L.T("almost done");
         if (span.TotalHours >= 1) return $"{(int)span.TotalHours}h {span.Minutes}m";
         if (span.TotalMinutes >= 1) return $"{span.Minutes}m {span.Seconds}s";
         return $"{span.Seconds}s";
@@ -300,9 +301,9 @@ public partial class RecoveryView : UserControl
     void Show(string title, string body, string? next)
     {
         Result.IsVisible = true;
-        ResultTitle.Text = title;
-        ResultText.Text = body;
-        ResultNext.Text = next ?? "";
+        ResultTitle.Text = L.T(title);
+        ResultText.Text = L.T(body);
+        ResultNext.Text = next is null ? "" : L.T(next);
         ResultNext.IsVisible = next is not null;
     }
 }
