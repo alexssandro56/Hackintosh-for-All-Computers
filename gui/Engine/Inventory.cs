@@ -226,7 +226,7 @@ public sealed class Stick
     public string Titled => $"{Name} · {Size}".Trim();
     public string Where => WriteTo.Length > 0 ? WriteTo
                          : Mounted.Count > 0 ? Mounted[0] : "";
-    public string State => Ready ? "ready" : "needs formatting";
+    public string State => L.T(Ready ? "ready" : "needs formatting");
 }
 
 public sealed class StickList
@@ -376,5 +376,5 @@ public static class Inventory
     }
 
     static string Said(string error, int code) =>
-        error.Trim() is { Length: > 0 } said ? said : $"the engine exited {code}";
+        error.Trim() is { Length: > 0 } said ? said : L.F("the engine exited {0}", code);
 }

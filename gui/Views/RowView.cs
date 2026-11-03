@@ -19,7 +19,7 @@ public sealed partial class RowView
 
     public RowView(Row row)
     {
-        Part = row.Part;
+        Part = L.T(row.Part);
         What = TrailingId().Replace(row.What, "");
         // the sentence is written for a console with one column; here the
         // kext and the id have columns of their own, and repeating them
@@ -49,6 +49,7 @@ public sealed partial class RowView
             "-" => ("not present", false, false, false),
             _ => (row.Verdict, false, false, false),
         };
+        Label = L.T(Label);
     }
 
     public string Part { get; }
@@ -78,8 +79,8 @@ public sealed class KextView
         HasUrl = !string.IsNullOrEmpty(facts.Url);
         // "not shipped here" is the more useful half when both are true: a kext
         // this repository does not carry cannot be added whatever its licence
-        Aside = facts.Shipped ? facts.Licence ?? "licence unread"
-                              : "not shipped here";
+        Aside = facts.Shipped ? facts.Licence ?? L.T("licence unread")
+                              : L.T("not shipped here");
     }
 
     public string Bundle { get; }
@@ -93,8 +94,8 @@ public sealed class BoundView
 {
     public BoundView(Bound bound)
     {
-        What = bound.What;
-        Span = $"{bound.From?.ToString() ?? "any"} → {bound.To?.ToString() ?? "current"}";
+        What = L.T(bound.What);
+        Span = $"{bound.From?.ToString() ?? L.T("any")} → {bound.To?.ToString() ?? L.T("current")}";
     }
 
     /// <summary>A row whose right-hand side is not a range.

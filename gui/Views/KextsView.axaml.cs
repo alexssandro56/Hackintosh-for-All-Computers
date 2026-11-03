@@ -11,16 +11,16 @@ public sealed class KextItem
     public KextItem(KextRow row)
     {
         Bundle = row.Bundle;
-        Upstream = row.Upstream ?? "no upstream recorded";
+        Upstream = row.Upstream ?? L.T("no upstream recorded");
         Version = row.Version ?? "—";
         // "none stated" is the absence of a licence, not a permissive one, and
         // the table says so in the same words the licence file does
-        Licence = row.Licence ?? "unread";
+        Licence = row.Licence ?? L.T("unread");
         // The table is generated from what each kext binds to by device id.
         // AppleALC matches on a layout, Lilu on nothing at all - neither is
         // idle, and neither has a row, so this says what is true of both.
-        Drives = row.Label ?? "not matched by device id";
-        Devices = row.Devices == 1 ? "1 device id" : $"{row.Devices} device ids";
+        Drives = row.Label ?? L.T("not matched by device id");
+        Devices = row.Devices == 1 ? L.T("1 device id") : L.F("{0} device ids", row.Devices);
         HasDevices = row.Devices > 0;
     }
 
@@ -40,6 +40,7 @@ public partial class KextsView : UserControl
     public KextsView()
     {
         InitializeComponent();
+        L.Apply(this);
     }
 
     /// <summary>Read the list the first time this pane is looked at.</summary>
@@ -66,10 +67,10 @@ public partial class KextsView : UserControl
 
         var claiming = list.Kexts.Count(k => k.Devices > 0);
         var ids = list.Kexts.Sum(k => k.Devices);
-        Blurb.Text = $"{list.Kexts.Count} kexts travel inside this program, so a build " +
-                     $"never reaches the network. {claiming} of them claim {ids} device " +
+        Blurb.Text = L.F("{0} kexts travel inside this program, so a build " +
+                     "never reaches the network. {1} of them claim {2} device " +
                      "ids between them, read out of the kexts themselves rather than " +
-                     "from a list somebody kept.";
+                     "from a list somebody kept.", list.Kexts.Count, claiming, ids);
         Rows.ItemsSource = list.Kexts.Select(k => new KextItem(k)).ToList();
     }
 }

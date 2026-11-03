@@ -9,6 +9,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        L.Apply(this);
         foreach (var nav in new[] { ToMachine, ToBuilder, ToReport, ToRecovery,
                                     ToInstaller, ToStick, ToDevices, ToKexts,
                                     ToAbout })
@@ -27,9 +28,9 @@ public partial class MainWindow : Window
         if (engine is null) return;
         var (about, _) = await Inventory.Facts(engine);
         if (about is null) return;
-        Version.Text = about.OpenCore is { } v ? $"OpenCore {v}" : "OpenCore, version unread";
-        StandingFacts.Text = $"{about.Configs} configs\n{about.Kexts} kexts vendored\n"
-                           + (about.Offline ? "no network to build" : "");
+        Version.Text = about.OpenCore is { } v ? $"OpenCore {v}" : L.T("OpenCore, version unread");
+        StandingFacts.Text = L.F("{0} configs\n{1} kexts vendored\n", about.Configs, about.Kexts)
+                           + (about.Offline ? L.T("no network to build") : "");
     }
 
     /// <summary>Switch panes, and let the one being shown read what it needs.</summary>

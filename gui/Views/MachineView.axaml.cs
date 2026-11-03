@@ -19,7 +19,11 @@ public sealed class TallyView
 {
     public TallyView(int count, string label, string verdict)
     {
-        Text = $"{count} {label}";
+        // a count reads as a plural, which a language may spell differently
+        // from the word in the column; the English is the same either way
+        var key = label + " (count)";
+        var said = L.T(key);
+        Text = $"{count} {(said == key ? L.T(label) : said)}";
         IsOk = verdict == "supported";
         IsBad = verdict == "not supported";
         IsUnknown = verdict == "unknown";
@@ -40,13 +44,14 @@ public partial class MachineView : UserControl
         // loader on its own leaves every one of them null, and the first line
         // that touches one is where it shows.
         InitializeComponent();
+        L.Apply(this);
         // An exception in an async event handler goes nowhere: the pane stays
         // empty, the program keeps running, and there is nothing to read. That
         // is how this failed on a real machine.
         Loaded += async (_, _) =>
         {
             try { await Load(); }
-            catch (Exception e) { NoMachine("This went wrong: " + e); }
+            catch (Exception e) { NoMachine(L.T("This went wrong: ") + e); }
         };
     }
 
@@ -85,12 +90,13 @@ public partial class MachineView : UserControl
             // about the wrong question
             var driven = machine.Rows.Count(r => r.Verdict == "driven by macOS");
             Note("THIS IS A MAC",
-                 $"{machine.Profile.Model ?? "A Mac"}, so the question is not which "
+                 L.F("{0}, so the question is not which "
                  + "kext would claim each device - none of them would - but which "
-                 + $"driver macOS has given it. {driven} of these were read from the "
-                 + $"running system, along with {ids} device ids. A Mac needs no EFI "
+                 + "driver macOS has given it. {1} of these were read from the "
+                 + "running system, along with {2} device ids. A Mac needs no EFI "
                  + "from this program: take a Report on the machine you are "
-                 + "converting, or open the Builder with its report.");
+                 + "converting, or open the Builder with its report.",
+                     machine.Profile.Model ?? L.T("A Mac"), driven, ids));
         }
         else if (!machine.WorthShowing)
         {
@@ -104,8 +110,8 @@ public partial class MachineView : UserControl
     void Note(string title, string text)
     {
         Trouble.IsVisible = true;
-        TroubleTitle.Text = title;
-        TroubleText.Text = text;
+        TroubleTitle.Text = L.T(title);
+        TroubleText.Text = L.T(text);
     }
 
     void NoMachine(string why)
@@ -121,21 +127,21 @@ public partial class MachineView : UserControl
         Trouble.IsVisible = false;
         Source.Text =
             m.Source.StartsWith("report", StringComparison.Ordinal)
-                ? "READ FROM " + m.Source.ToUpperInvariant()
-                : "READ FROM THIS MACHINE";
+                ? L.T("READ FROM ") + m.Source.ToUpperInvariant()
+                : L.T("READ FROM THIS MACHINE");
 
         // the name the machine gives itself, where it gives one. Vendors leave
         // that field at a placeholder often enough that the engine filters it,
         // and then the processor is the only honest name left.
-        MachineName.Text = m.Profile.Model ?? m.Profile.Cpu ?? "Unnamed machine";
+        MachineName.Text = m.Profile.Model ?? m.Profile.Cpu ?? L.T("Unnamed machine");
 
         var spec = new List<SpecView>();
         if (m.Profile.Model is not null && m.Profile.Cpu is { } cpu)
             spec.Add(new SpecView("", cpu));
-        if (m.Profile.Generation is { } gen) spec.Add(new SpecView("generation", gen));
-        if (m.Profile.Cores is { } cores) spec.Add(new SpecView("cores", cores.ToString()));
-        if (m.Platform is { } platform) spec.Add(new SpecView("form factor", platform));
-        if (m.Profile.Oem is { } oem) spec.Add(new SpecView("board", oem));
+        if (m.Profile.Generation is { } gen) spec.Add(new SpecView(L.T("generation"), gen));
+        if (m.Profile.Cores is { } cores) spec.Add(new SpecView(L.T("cores"), cores.ToString()));
+        if (m.Platform is { } platform) spec.Add(new SpecView(L.T("form factor"), L.T(platform)));
+        if (m.Profile.Oem is { } oem) spec.Add(new SpecView(L.T("board"), oem));
         Spec.ItemsSource = spec;
 
         var counts = new[] { ("supported", "supported"),
@@ -154,54 +160,54 @@ public partial class MachineView : UserControl
         if (m.Mac is { Listed: true })
         {
             var last = m.Mac.To;
-            Window.Text = m.Mac.Current ? "Whatever Apple is serving now"
-                                        : $"Up to {last}";
+            Window.Text = m.Mac.Current ? L.T("Whatever Apple is serving now")
+                                        : L.F("Up to {0}", last);
             WindowWhy.Text = m.Mac.Current
-                ? $"{m.Mac.Board} is one of the boards Apple keeps current, so "
-                + "this Mac is offered the newest macOS there is."
-                : $"{m.Mac.Board} is offered up to {last}. There is no floor "
-                + "here: nothing this reads knows the oldest macOS a Mac runs.";
+                ? L.F("{0} is one of the boards Apple keeps current, so "
+                + "this Mac is offered the newest macOS there is.", m.Mac.Board)
+                : L.F("{0} is offered up to {1}. There is no floor "
+                + "here: nothing this reads knows the oldest macOS a Mac runs.", m.Mac.Board, last);
             var bounds = new List<BoundView>
             {
-                new(new Bound { What = "Apple, for " + m.Mac.Board, To = m.Mac.To }),
+                new(new Bound { What = L.T("Apple, for ") + m.Mac.Board, To = m.Mac.To }),
             };
             // a different fact, and it used to be read as the one above:
             // which lines Apple still publishes for it is about updates
             if (m.Mac.Serving.Count > 0)
-                bounds.Add(new BoundView("Apple still updates it on",
+                bounds.Add(new BoundView(L.T("Apple still updates it on"),
                                          string.Join(", ", m.Mac.Serving)));
             Bounds.ItemsSource = bounds;
         }
         else if (m.Mac is { Listed: false })
         {
-            Window.Text = "Not in Apple's list";
-            WindowWhy.Text = $"{m.Mac.Board} is not in any macOS line Apple still "
-                           + "serves, which happens to a Mac too old for all of them.";
+            Window.Text = L.T("Not in Apple's list");
+            WindowWhy.Text = L.F("{0} is not in any macOS line Apple still "
+                           + "serves, which happens to a Mac too old for all of them.", m.Mac.Board);
             Bounds.ItemsSource = new List<BoundView>();
         }
         else if (m.Macos.From is { } from)
         {
-            Window.Text = m.Macos.To is { } to ? $"{from} – {to}" : $"{from} and newer";
+            Window.Text = m.Macos.To is { } to ? $"{from} – {to}" : L.F("{0} and newer", from);
             WindowWhy.Text = m.Macos.To is not null
-                ? $"floor set by {m.Macos.FromBecause}; ceiling by {m.Macos.ToBecause}"
-                : $"floor set by {m.Macos.FromBecause}. No part here sets a ceiling - " +
-                  "the SMBIOS a build picks has one of its own.";
+                ? L.F("floor set by {0}; ceiling by {1}", m.Macos.FromBecause, m.Macos.ToBecause)
+                : L.F("floor set by {0}. No part here sets a ceiling - " +
+                  "the SMBIOS a build picks has one of its own.", m.Macos.FromBecause);
         }
         else
         {
-            Window.Text = "Not bounded here";
-            WindowWhy.Text = "Nothing on this machine narrows the range, which is not the " +
-                       "same as saying every release works.";
+            Window.Text = L.T("Not bounded here");
+            WindowWhy.Text = L.T("Nothing on this machine narrows the range, which is not the " +
+                       "same as saying every release works.");
         }
 
         if (m.Oclp.Count > 0)
         {
-            var said = m.Oclp.Select(p => $"{p.What} from macOS {p.From}"
-                                        + (p.To is { } to ? $" to {to}" : ""));
-            Patched.Text = "Past that: OpenCore Legacy Patcher restores "
-                         + string.Join(", ", said)
-                         + ". Those patches go on an installed macOS, not in the "
-                         + "EFI this builds, and OCLP is written for real Macs.";
+            var said = m.Oclp.Select(p => L.F("{0} from macOS {1}", L.T(p.What), p.From)
+                                        + (p.To is { } to ? L.F(" to {0}", to) : ""));
+            Patched.Text = L.F("Past that: OpenCore Legacy Patcher restores {0}. "
+                         + "Those patches go on an installed macOS, not in the "
+                         + "EFI this builds, and OCLP is written for real Macs.",
+                           string.Join(", ", said));
             Patched.IsVisible = true;
         }
         else
