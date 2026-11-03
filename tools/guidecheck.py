@@ -93,19 +93,24 @@ def check(root):
     return bad
 
 
+# the languages besides English, by the suffix their pages carry
+TRANSLATIONS = ('tr', 'pt')
+
+
 def parity(guide):
-    """Every page in one language has to exist in the other.
+    """Every page in one language has to exist in the others.
 
     A guide that quietly ships a page in English only reads, to somebody on the
-    Turkish side, as a guide with a hole in it - and nothing in the build says
-    a word about it."""
-    english = {p.stem for p in guide.glob('*.md') if not p.stem.endswith('.tr')}
-    turkish = {p.stem[:-3] for p in guide.glob('*.tr.md')}
+    Turkish or Portuguese side, as a guide with a hole in it - and nothing in
+    the build says a word about it."""
+    english = {p.stem for p in guide.glob('*.md') if '.' not in p.stem}
     out = []
-    for missing in sorted(english - turkish):
-        out.append(f'{missing}.md has no {missing}.tr.md beside it')
-    for orphan in sorted(turkish - english):
-        out.append(f'{orphan}.tr.md has no English {orphan}.md beside it')
+    for lang in TRANSLATIONS:
+        there = {p.stem[:-len(lang) - 1] for p in guide.glob(f'*.{lang}.md')}
+        for missing in sorted(english - there):
+            out.append(f'{missing}.md has no {missing}.{lang}.md beside it')
+        for orphan in sorted(there - english):
+            out.append(f'{orphan}.{lang}.md has no English {orphan}.md beside it')
     return out
 
 
@@ -124,7 +129,7 @@ def main(argv=None):
         for said in complaints:
             print(f'    {said}')
         return 1
-    print(f'  every page exists in both languages')
+    print(f'  every page exists in every language')
 
     root = Path(a.site)
     if not root.is_dir():

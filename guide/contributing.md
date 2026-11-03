@@ -35,9 +35,10 @@ derived, measured, quoted, reported - or no source at all, said plainly.
 
 Each page has a pencil icon at the top right that opens it on GitHub.
 
-The site lives in `guide/`, and every page exists twice: `bios.md` in English
-and `bios.tr.md` in Turkish. The selftest fails if one of the pair is missing,
-so a page added in one language cannot quietly ship without the other.
+The site lives in `guide/`, and every page exists three times: `bios.md` in
+English, `bios.tr.md` in Turkish and `bios.pt.md` in Portuguese. The selftest
+fails if one of them is missing, so a page added in one language cannot quietly
+ship without the others.
 
 ```
 pip install -r guide/requirements.txt

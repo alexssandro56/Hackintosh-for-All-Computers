@@ -95,10 +95,35 @@ plugins:
             More: Dahası
             Without the window: Pencere olmadan
             Working on this repository: Bu depoda çalışmak
+        - locale: pt
+          name: Português
+          build: true
+          site_name: macOS em Todos os Computadores
+          nav_translations:
+            Start here: Comece aqui
+            What this is: O que é isto
+            The app: O app
+            When your system blocks it: Se o seu sistema bloquear
+            Build: Gerar
+            Get your EFI: Gere a sua EFI
+            Building for another machine: Gerar para outra máquina
+            Check compatibility: Confira a compatibilidade
+            Make the USB stick: Prepare o pendrive
+            Building the stick on a Mac: Preparar o pendrive num Mac
+            macOS images: Imagens do macOS
+            Install: Instalar
+            Adjust BIOS settings: Configure a BIOS
+            First boot: Primeira inicialização
+            macOS installation steps: Passos da instalação do macOS
+            Post installation: Pós-instalação
+            More: Mais
+            Without the window: Sem a janela
+            Working on this repository: Trabalhando neste repositório
   - search:
       lang:
         - en
         - tr
+        - pt
 
 markdown_extensions:
   - admonition
