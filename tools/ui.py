@@ -25,6 +25,8 @@ import os
 import re
 import sys
 
+import i18n
+
 CODES = {
     'bold': '\033[1m', 'dim': '\033[2m', 'green': '\033[32m',
     'yellow': '\033[33m', 'red': '\033[31m', 'reset': '\033[0m',
@@ -144,13 +146,13 @@ class Protocol:
         self.pending += s
         while '\n' in self.pending:
             line, self.pending = self.pending.split('\n', 1)
-            self._write({'t': 'text', 'spans': spans(line)})
+            self._write({'t': 'text', 'spans': spans(i18n.tr_line(line))})
         return len(s)
 
     def flush_text(self):
         if self.pending:
             rest, self.pending = self.pending, ''
-            self._write({'t': 'text', 'spans': spans(rest)})
+            self._write({'t': 'text', 'spans': spans(i18n.tr_line(rest))})
 
     def flush(self):
         self.out.flush()
@@ -205,7 +207,7 @@ class Protocol:
         self.emit(t='done', rc=rc, out=out)
 
     def fatal(self, message):
-        self.emit(t='fatal', message=str(message))
+        self.emit(t='fatal', message=i18n.tr(str(message)))
 
 
 def install(surface):

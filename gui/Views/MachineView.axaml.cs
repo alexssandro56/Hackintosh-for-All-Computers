@@ -127,7 +127,8 @@ public partial class MachineView : UserControl
         Trouble.IsVisible = false;
         Source.Text =
             m.Source.StartsWith("report", StringComparison.Ordinal)
-                ? L.T("READ FROM ") + m.Source.ToUpperInvariant()
+                // "report <file>" is the engine's own wording; the file name is not
+                ? (L.T("READ FROM ") + L.T("report ") + m.Source["report ".Length..]).ToUpperInvariant()
                 : L.T("READ FROM THIS MACHINE");
 
         // the name the machine gives itself, where it gives one. Vendors leave

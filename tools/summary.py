@@ -26,6 +26,7 @@ import advise
 import audio
 import detect
 import gpu
+import i18n
 import coverage
 import inputdev
 import mactable
@@ -857,12 +858,15 @@ def _fit(text, width):
 
 def render(hw, source='this machine'):
     """The whole screen as lines."""
-    table = rows(hw)
+    # translated cell by cell, not as printed lines: a row is four values
+    # padded into columns, and no message matches a whole padded row
+    table = [dict(r, part=i18n.tr(r['part']), detail=i18n.tr(r['detail']),
+                  shown=i18n.tr(r['verdict'])) for r in rows(hw)]
     width = max(len(r['what']) for r in table)
     width = min(max(width, 24), 44)
     # measured, not fixed at 14: "driven by macOS" is fifteen characters and ran
     # straight into the sentence after it
-    verdict_width = max(14, max(len(r['verdict']) for r in table)) + 1
+    verdict_width = max(14, max(len(r['shown']) for r in table)) + 1
     lines = [f'{BOLD}Hardware for macOS{RESET}  {DIM}from {source}{RESET}', '']
     for r in table:
         what = _fit(r['what'], width)
@@ -872,7 +876,7 @@ def render(hw, source='this machine'):
         # supported family" - and half a sentence is worse than two lines.
         body = textwrap.wrap(r['detail'], DETAIL) or ['']
         lines.append(f'  {r["part"]:<12s} {what:<{width}s}  '
-                     f'{colour}{r["verdict"]:<{verdict_width}s}{RESET}'
+                     f'{colour}{r["shown"]:<{verdict_width}s}{RESET}'
                      f'{DIM}{body[0]}{RESET}'.rstrip())
         pad = ' ' * (2 + 12 + 1 + width + 2 + verdict_width)
         for extra in body[1:]:
@@ -897,9 +901,9 @@ def render(hw, source='this machine'):
     window = macos_range(hw)
     if window:
         floor, ceiling = window
-        span = f'{name_for(floor[1])} or newer'
+        span = i18n.fmt('{} or newer', name_for(floor[1]))
         if ceiling:
-            span = f'{name_for(floor[1])} to {name_for(ceiling[2])}'
+            span = i18n.fmt('{} to {}', name_for(floor[1]), name_for(ceiling[2]))
         lines.append('')
         lines.append(f'  {BOLD}macOS{RESET}  {span}')
         lines.append(f'      {DIM}{floor[0]} sets the oldest'

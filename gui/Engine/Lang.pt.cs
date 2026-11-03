@@ -203,6 +203,7 @@ public static partial class L
         ["NO MACHINE TO SHOW"] = "NENHUMA MÁQUINA PARA MOSTRAR",
         ["READ FROM THIS MACHINE"] = "LIDO DESTA MÁQUINA",
         ["READ FROM "] = "LIDO DE ",
+        ["report "] = "relatório ",
         ["MACOS THIS MACHINE CAN RUN"] = "MACOS QUE ESTA MÁQUINA PODE RODAR",
         ["WHAT SETS THE LIMITS"] = "O QUE DEFINE OS LIMITES",
         ["HARDWARE"] = "HARDWARE",

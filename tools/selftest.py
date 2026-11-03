@@ -14,6 +14,10 @@ import sys
 import tempfile
 from pathlib import Path
 
+# Every check here reads the English the tools print. A machine set to another
+# language would otherwise translate what is being checked and fail all of it.
+os.environ['HFAC_LANG'] = 'en'
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import audio
 import detect
@@ -2609,8 +2613,10 @@ def the_stick_it_writes_to():
         check('  and it says why in those words', says in why, why)
         check('  ready means it names where to write',
               bool(where) is ready, where)
+    # the sentence is a format string now, so a translation can put the word
+    # where its own grammar wants it; the word filled in is still the device
     check('a pane that asks for a word says which word',
-          'Type {stick.Device} below' in
+          'boots from. Type {0} below to turn the button on.", stick.Device)' in
           Path('gui/Views/StickView.axaml.cs').read_text())
 
     # naming a disk nobody was offered does not erase it. This is the check
